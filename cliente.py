@@ -4,6 +4,7 @@ import tkinter
 import tkinter.scrolledtext
 from tkinter import simpledialog
 import ssl
+import time
 
 host = '127.0.0.1'
 puerto = 6400
@@ -19,6 +20,7 @@ class Client:
 
         self.sock = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_side=False, server_hostname="127.0.0.1")
         self.sock.connect((host, port))
+
 
         self.nickname = self.sock.recv(1024).decode('utf-8')  # Recibir el nombre asignado
 
@@ -56,6 +58,24 @@ class Client:
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
 
         self.win.mainloop()
+
+    def conectar(self):
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        context.load_cert_chain(certfile="myapp.crt", keyfile="myapp.key")
+
+        self.sock = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_side=False, server_hostname="127.0.0.1")
+        try:
+            self.sock.connect((self.host, self.port))
+            self.nickname = self.sock.recv(1024).decode('utf-8')
+            print("Conectado al servidor")
+            threading.Thread(target=self.receive).start()
+        except Exception as e:
+            print(f"Error al conectar al servidor: {e}")
+            # Intentar reconectar después de 5 segundos
+            time.sleep(5)
+            self.connect()
 
     def receive(self):
         while self.running:
