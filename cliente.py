@@ -5,9 +5,11 @@ import tkinter.scrolledtext
 from tkinter import simpledialog
 import ssl
 import time
+import win32com.client
+import pythoncom  # Agrega esta importación
 
 host = '127.0.0.1'
-puerto = 6400
+puerto = 6401
 
 
 class Client:
@@ -20,7 +22,6 @@ class Client:
 
         self.sock = context.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM), server_side=False, server_hostname="127.0.0.1")
         self.sock.connect((host, port))
-
 
         self.nickname = self.sock.recv(1024).decode('utf-8')  # Recibir el nombre asignado
 
@@ -57,7 +58,30 @@ class Client:
 
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
 
+        # Extraer datos del MSMQ y mostrarlos en el text_area
+
         self.win.mainloop()
+        
+        self.extract_msmq_data()
+
+    def extract_msmq_data(self):
+        pythoncom.CoInitialize()
+        qinfo = win32com.client.Dispatch("MSMQ.MSMQQueueInfo")
+        computer_name = "Chris"
+        qinfo.FormatName = f"direct=os:{computer_name}\\private$\\ChatQueue"
+        queue = qinfo.Open(1, 0)   # Open a ref to queue to peek(1) messages
+        while True:
+            try:
+                msg = queue.Peek(0)
+                # Inserta el mensaje en text_area
+                self.text_area.config(state='normal')
+                self.text_area.insert('end', str(msg.Body))
+                self.text_area.yview('end')
+                self.text_area.config(state='disabled')
+            except win32com.client.pywintypes.com_error as e:
+                # No hay más mensajes en la cola
+                break
+        queue.Close()
 
     def conectar(self):
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
