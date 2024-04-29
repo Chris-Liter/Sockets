@@ -5,8 +5,6 @@ import tkinter.scrolledtext
 from tkinter import simpledialog
 import ssl
 import time
-import win32com.client
-import pythoncom  # Agrega esta importación
 
 host = '127.0.0.1'
 puerto = 6401
@@ -36,19 +34,21 @@ class Client:
 
     def gui_loop(self):
         self.win = tkinter.Tk()
+
+        self.win.geometry("1080x720")
         self.win.configure(bg="#303030")  # Color de fondo más oscuro
 
         self.chat_label = tkinter.Label(self.win, text="Chat", bg="#303030", fg="#FFFFFF", font=("Arial", 16, "bold"))  # Texto blanco
         self.chat_label.pack(padx=20, pady=5)
 
-        self.text_area = tkinter.scrolledtext.ScrolledText(self.win, bg="#404040", fg="#FFFFFF")  # Fondo gris más oscuro y texto blanco
-        self.text_area.pack(padx=20, pady=5)
+        self.text_area = tkinter.Text(self.win, width=97, height=25, bg="#404040", fg="#FFFFFF")
+        self.text_area.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
         self.text_area.config(state='disabled')
 
-        self.msg_label = tkinter.Label(self.win, text="Mensaje", bg="#303030", fg="#FFFFFF", font=("Arial", 12))
+        self.msg_label = tkinter.Label(self.win, text="Mensaje", bg="#303030", fg="#FFFFFF", font=("Arial", 15))
         self.msg_label.pack(padx=20, pady=5)
 
-        self.input_area = tkinter.Text(self.win, height=3, bg="#404040", fg="#FFFFFF")  # Fondo gris más oscuro y texto blanco
+        self.input_area = tkinter.Text(self.win, height=3, bg="#404040", fg="#FFFFFF", font=("Arial", 15))  # Fondo gris más oscuro y texto blanco
         self.input_area.pack(padx=20, pady=5)
 
         self.send_button = tkinter.Button(self.win, text="Enviar", command=self.write, bg="#008CBA", fg="white", font=("Arial", 12))  # Botón azul claro con texto blanco
@@ -61,27 +61,7 @@ class Client:
         # Extraer datos del MSMQ y mostrarlos en el text_area
 
         self.win.mainloop()
-        
-        self.extract_msmq_data()
-
-    def extract_msmq_data(self):
-        pythoncom.CoInitialize()
-        qinfo = win32com.client.Dispatch("MSMQ.MSMQQueueInfo")
-        computer_name = "Chris"
-        qinfo.FormatName = f"direct=os:{computer_name}\\private$\\ChatQueue"
-        queue = qinfo.Open(1, 0)   # Open a ref to queue to peek(1) messages
-        while True:
-            try:
-                msg = queue.Peek(0)
-                # Inserta el mensaje en text_area
-                self.text_area.config(state='normal')
-                self.text_area.insert('end', str(msg.Body))
-                self.text_area.yview('end')
-                self.text_area.config(state='disabled')
-            except win32com.client.pywintypes.com_error as e:
-                # No hay más mensajes en la cola
-                break
-        queue.Close()
+    
 
     def conectar(self):
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
