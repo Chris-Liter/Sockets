@@ -1,9 +1,6 @@
 import socket
 import threading
 import ssl
-import win32com.client
-import os
-import hashlib
 import pika
 
 HOST = '127.0.0.1'
@@ -35,7 +32,7 @@ def broadcast(message):
         channel.basic_publish(exchange='', routing_key='chat_queue', body=message)
         client.send(message)
 
-def handle(client):
+def manejar(client):
     while True:
         try:
             message = client.recv(1024)
@@ -58,7 +55,7 @@ def handle(client):
     except ValueError:
         pass
 
-def receive():
+def recibir():
     while True:
         client, address = server.accept()
         print(f"Conectado con {str(address)}!")
@@ -68,16 +65,16 @@ def receive():
         clients.append(client)
 
         print(f"Nombre de el cliente es {nickname}\n")
-        mensajes = channel.basic_consume(queue=result, on_message_callback=receive, auto_ack=True)
+        mensajes = channel.basic_consume(queue=result, on_message_callback=recibir, auto_ack=True)
         broadcast(f"{nickname} \n".encode('utf-8'))
         #client.send(mensajes)
         client.send(nickname.encode('utf-8'))  
 
 
-        handle_thread = threading.Thread(target=handle, args=(client,))
+        handle_thread = threading.Thread(target=manejar, args=(client,))
         handle_thread.start()
 
 
 
 print("Servidor corriendo")
-receive()
+recibir()

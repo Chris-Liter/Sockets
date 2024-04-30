@@ -74,14 +74,14 @@ class Client:
             self.sock.connect((self.host, self.port))
             self.nickname = self.sock.recv(1024).decode('utf-8')
             print("Conectado al servidor")
-            threading.Thread(target=self.receive).start()
+            threading.Thread(target=self.recibir).start()
         except Exception as e:
             print(f"Error al conectar al servidor: {e}")
             # Intentar reconectar después de 5 segundos
             time.sleep(5)
             self.connect()
 
-    def receive(self):
+    def recibir(self):
         while self.running:
             try:
                 message = self.sock.recv(1024).decode('utf-8')
