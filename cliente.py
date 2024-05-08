@@ -69,23 +69,23 @@ class Client:
 
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
 
+        
         while True:
             method_frame, properties, body = channel.basic_get(queue="chat_queue", auto_ack=False)
             if method_frame:
                 mensaje = body.decode("utf-8")
                 print("Mensajes: ", mensaje)
                 if self.gui_done:
-                     self.text_area.config(state='normal')
-                     self.text_area.insert('end', mensaje)
-                     self.text_area.yview('end')
-                     self.text_area.config(state='disabled')
-                     
-                     self.win.mainloop()
-                                           #channel.basic_nack(delivery_tag=False)
-                else:
-                    print()
+                    self.text_area.config(state='normal')
+                    self.text_area.insert('end', mensaje)
+                    self.text_area.yview('end')
+                    self.text_area.config(state='disabled')
+            else:
+                print("No more messages in the queue.")
+                break
 
-        
+
+        self.win.mainloop()
     
 
     def conectar(self):
