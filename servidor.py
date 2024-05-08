@@ -4,7 +4,7 @@ import ssl
 import pika
 
 HOST = '127.0.0.1'
-PUERTO = 6401
+PUERTO = 6403
 
 #hostname = 'www.python.org'
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
@@ -65,7 +65,7 @@ def recibir():
         clients.append(client)
 
         print(f"Nombre de el cliente es {nickname}\n")
-        mensajes = channel.basic_consume(queue=result, on_message_callback=recibir, auto_ack=True)
+        
         broadcast(f"{nickname} \n".encode('utf-8'))
         #client.send(mensajes)
         client.send(nickname.encode('utf-8'))  

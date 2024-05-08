@@ -5,9 +5,15 @@ import tkinter.scrolledtext
 from tkinter import simpledialog
 import ssl
 import time
+import pika
+
 
 host = '127.0.0.1'
-puerto = 6401
+puerto = 6403
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+channel = connection.channel()
+channel.queue_declare(queue='chat_queue')
 
 
 class Client:
@@ -26,11 +32,16 @@ class Client:
         self.gui_done = False
         self.running = True
 
+        
+
         gui_thread = threading.Thread(target=self.gui_loop)
         receive_thread = threading.Thread(target=self.recibir)
+        
+        
 
         gui_thread.start()
         receive_thread.start()
+        
 
     def gui_loop(self):
         self.win = tkinter.Tk()
@@ -58,9 +69,23 @@ class Client:
 
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
 
-        # Extraer datos del MSMQ y mostrarlos en el text_area
+        while True:
+            method_frame, properties, body = channel.basic_get(queue="chat_queue", auto_ack=False)
+            if method_frame:
+                mensaje = body.decode("utf-8")
+                print("Mensajes: ", mensaje)
+                if self.gui_done:
+                     self.text_area.config(state='normal')
+                     self.text_area.insert('end', mensaje)
+                     self.text_area.yview('end')
+                     self.text_area.config(state='disabled')
+                     
+                     self.win.mainloop()
+                                           #channel.basic_nack(delivery_tag=False)
+                else:
+                    print()
 
-        self.win.mainloop()
+        
     
 
     def conectar(self):
@@ -75,17 +100,20 @@ class Client:
             self.nickname = self.sock.recv(1024).decode('utf-8')
             print("Conectado al servidor")
             threading.Thread(target=self.recibir).start()
+            
+            
         except Exception as e:
             print(f"Error al conectar al servidor: {e}")
             # Intentar reconectar después de 5 segundos
             time.sleep(5)
             self.connect()
 
+
     def recibir(self):
         while self.running:
             try:
                 message = self.sock.recv(1024).decode('utf-8')
-                if message == 'NICK':
+                if message == '':
                     pass  # No se necesita aquí, ya que el nombre se recibe en __init__
                 else:
                     if self.gui_done:
@@ -93,6 +121,8 @@ class Client:
                         self.text_area.insert('end', message)
                         self.text_area.yview('end')
                         self.text_area.config(state='disabled')
+                   
+                        
             except ConnectionAbortedError:
                 break
             except:
@@ -110,5 +140,7 @@ class Client:
         self.win.destroy()
         self.sock.close()
         exit(0)
+
+       
 
 client = Client(host, puerto)
